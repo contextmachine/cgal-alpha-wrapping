@@ -72,12 +72,6 @@ jobs:
         virtualenvs-create: true
         virtualenvs-in-project: true
 
-    - name: Load cached venv
-      id: cached-pip-wheels
-      uses: actions/cache@v3
-      with:
-          path: ~/.cache
-          key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ steps.extract_branch.outputs.branch }}
 
     - name: Install dependencies
       run: |
@@ -125,12 +119,6 @@ jobs:
       with:
         virtualenvs-create: true
         virtualenvs-in-project: true
-    - name: Load cached venv
-      id: cached-pip-wheels
-      uses: actions/cache@v3
-      with:
-          path: ~/.cache
-          key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ steps.extract_branch.outputs.branch }}
 
     - name: Install CGAL on Ubuntu
       run: |
