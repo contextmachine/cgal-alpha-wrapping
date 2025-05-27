@@ -61,7 +61,7 @@ jobs:
 
     - name: Set dynamic version
       run: |
-        echo "DYNAMIC_VERSION=0.1.0.dev$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+        echo "DYNAMIC_VERSION=0.1.0+dev.$(git rev-parse --short HEAD)" >> $GITHUB_ENV
       shell: bash
 
     - name: Build wheels
@@ -134,13 +134,13 @@ jobs:
 
     - name: Set dynamic version
       run: |
-        echo "DYNAMIC_VERSION=0.1.0.dev$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+        echo "DYNAMIC_VERSION=0.1.0+dev.$(git rev-parse --short HEAD)" >> $GITHUB_ENV
       shell: bash
 
     - name: Build sdist
       env:
         CGAL_ALPHA_WRAPPING_VERSION: ${{ env.DYNAMIC_VERSION }}
-      run: python -m build --sdist
+      run: python setup.py sdist
 
     - name: Upload sdist
       uses: actions/upload-artifact@v4
