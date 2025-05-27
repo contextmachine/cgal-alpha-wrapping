@@ -74,7 +74,9 @@ jobs:
         key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
 
     - name: Install dependencies
-      run: poetry install --no-interaction --no-root
+      run: |
+        source $VENV
+        poetry install --no-interaction --no-root
 
     - name: Set dynamic version
       run: |
@@ -85,6 +87,7 @@ jobs:
       env:
         CGAL_ALPHA_WRAPPING_VERSION: ${{ env.DYNAMIC_VERSION }}
       run: |
+        source $VENV
         mkdir -p wheelhouse
         poetry build --format wheel
         cp dist/*.whl wheelhouse/
@@ -131,7 +134,10 @@ jobs:
           build-essential
 
     - name: Install dependencies
-      run: poetry install --no-interaction --no-root
+
+      run: |
+        source $VENV
+        poetry install --no-interaction --no-root
 
     - name: Set dynamic version
       run: |
@@ -141,7 +147,9 @@ jobs:
     - name: Poetry build
       env:
         CGAL_ALPHA_WRAPPING_VERSION: ${{ env.DYNAMIC_VERSION }}
-      run: poetry build
+      run: |
+        source $VENV
+        poetry build
 
     - name: Upload sdist
       uses: actions/upload-artifact@v4
