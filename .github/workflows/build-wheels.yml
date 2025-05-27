@@ -72,16 +72,17 @@ jobs:
         virtualenvs-create: true
         virtualenvs-in-project: true
 
-
     - name: Install dependencies
-      run: |
-        source $VENV
-        poetry install --no-interaction --no-root
+      run: poetry install --no-interaction --no-root
 
     - name: Set dynamic version
       run: |
         echo "DYNAMIC_VERSION=0.1.0+dev.$(git rev-parse --short HEAD)" >> $GITHUB_ENV
       shell: bash
+    - name: Debug venv
+      run: |
+        ls -a
+        ls -a .venv
 
     - name: Poetry build wheel
       env:
@@ -130,12 +131,9 @@ jobs:
           libmpfr-dev \
           build-essential
 
+
     - name: Install dependencies
-
-      run: |
-        source $VENV
-        poetry install --no-interaction --no-root
-
+      run: poetry install --no-interaction --no-root
     - name: Set dynamic version
       run: |
         echo "DYNAMIC_VERSION=0.1.0+dev.$(git rev-parse --short HEAD)" >> $GITHUB_ENV
