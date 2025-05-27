@@ -56,12 +56,12 @@ jobs:
         if not exist "C:\vcpkg" (
           git clone https://github.com/Microsoft/vcpkg.git C:\vcpkg
         )
-        cd C:\vcpkg
-        if not exist "vcpkg.exe" (
-          .\bootstrap-vcpkg.bat
+        cd /d C:\vcpkg
+        if not exist "C:\vcpkg\vcpkg.exe" (
+          call bootstrap-vcpkg.bat
         )
-        .\vcpkg integrate install
-        .\vcpkg install cgal:x64-windows eigen3:x64-windows gmp:x64-windows mpfr:x64-windows
+        vcpkg integrate install
+        vcpkg install cgal:x64-windows eigen3:x64-windows gmp:x64-windows mpfr:x64-windows
 
     - name: Set dynamic version
       run: |
