@@ -15,8 +15,17 @@ dependencies = [
 
 
 [build-system]
-requires = ["poetry-core>=2.0.0", "cython>=3.1", "numpy", "setuptools", "pyMSVC;sys_platform=='win32'"]
-build-backend = "poetry.core.masonry.api"
+requires = ["poetry-core>=2.0.0", "poetry-dynamic-versioning>=1.0.0,<2.0.0", "cython>=3.1", "numpy", "setuptools", "pyMSVC;sys_platform=='win32'"]
+build-backend = "poetry_dynamic_versioning.backend"
+
+[tool.poetry]
+name = "cgal-alpha-wrapping"
+version = "0.0.0"
+description = ""
+authors = ["sth-v <sthv.developer@gmail.com>"]
+
+[tool.poetry-dynamic-versioning]
+enable = true
 
 [tool.poetry.build]
 generate-setup-file = false
