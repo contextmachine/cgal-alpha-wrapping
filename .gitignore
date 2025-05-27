@@ -1,0 +1,10 @@
+*.obj
+build/
+.venv/
+.idea/
+poetry.lock
+*.DS_Store
+__pycache__/
+*.so
+
+cgal_alpha_wrapping/_cgal_alpha_wrapping.cpp

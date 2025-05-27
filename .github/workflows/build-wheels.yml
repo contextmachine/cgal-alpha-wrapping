@@ -1,0 +1,188 @@
+name: Build Wheels
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  release:
+    types: [ published ]
+
+jobs:
+  build_wheels:
+    name: Build wheels on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest,  macos-latest]
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install cibuildwheel
+
+    # Ubuntu: Install CGAL and dependencies
+    - name: Install CGAL on Ubuntu
+      if: runner.os == 'Linux'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          libcgal-dev \
+          libeigen3-dev \
+          libgmp-dev \
+          libmpfr-dev \
+          build-essential
+
+    # macOS: Install CGAL and dependencies via Homebrew
+    - name: Install CGAL on macOS
+      if: runner.os == 'macOS'
+      run: |
+        brew update
+        brew install cgal eigen gmp mpfr
+
+    # Windows: Install CGAL and dependencies via vcpkg
+    - name: Install CGAL on Windows
+      if: runner.os == 'Windows'
+      shell: cmd
+      run: |
+        git clone https://github.com/Microsoft/vcpkg.git C:\vcpkg
+        cd C:\vcpkg
+        .\bootstrap-vcpkg.bat
+        .\vcpkg integrate install
+        .\vcpkg install cgal:x64-windows eigen3:x64-windows gmp:x64-windows mpfr:x64-windows
+
+    - name: Set dynamic version
+      run: |
+        echo "DYNAMIC_VERSION=0.1.0.dev$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+      shell: bash
+
+    - name: Build wheels
+      env:
+        # Configure cibuildwheel
+        CIBW_BUILD: "cp39-* cp310-* cp311-* cp312-* cp313-*"
+        CIBW_SKIP: "*-win32 *-manylinux_i686 *-musllinux*"
+        
+        # Set dynamic version for build
+        CIBW_ENVIRONMENT: "CGAL_ALPHA_WRAPPING_VERSION=${{ env.DYNAMIC_VERSION }}"
+        
+        # Linux environment
+        CIBW_BEFORE_BUILD_LINUX: |
+          yum install -y epel-release && 
+          yum install -y cgal-devel eigen3-devel gmp-devel mpfr-devel gcc-c++ || 
+          (apt-get update && apt-get install -y libcgal-dev libeigen3-dev libgmp-dev libmpfr-dev build-essential)
+        
+        # macOS environment
+        CIBW_BEFORE_BUILD_MACOS: |
+          brew install cgal eigen gmp mpfr || true
+        
+        # Windows environment
+        CIBW_BEFORE_BUILD_WINDOWS: |
+          if not exist "C:\vcpkg" (
+            git clone https://github.com/Microsoft/vcpkg.git C:\vcpkg &&
+            cd C:\vcpkg &&
+            .\bootstrap-vcpkg.bat &&
+            .\vcpkg integrate install &&
+            .\vcpkg install cgal:x64-windows eigen3:x64-windows gmp:x64-windows mpfr:x64-windows
+          )
+        
+        # Environment variables for Windows builds
+        CIBW_ENVIRONMENT_WINDOWS: >
+          VCPKG_ROOT="C:\vcpkg"
+          CMAKE_TOOLCHAIN_FILE="C:\vcpkg\scripts\buildsystems\vcpkg.cmake"
+        
+        # Repair wheels (especially important for Linux)
+        CIBW_REPAIR_WHEEL_COMMAND_LINUX: "auditwheel repair -w {dest_dir} {wheel}"
+        CIBW_REPAIR_WHEEL_COMMAND_MACOS: "delocate-wheel --require-archs {delocate_archs} -w {dest_dir} -v {wheel}"
+        
+        # Test command to verify wheels work
+        CIBW_TEST_COMMAND: "python -c 'import cgal_alpha_wrapping; print(cgal_alpha_wrapping.__name__)'"
+        
+        # Build settings
+        CIBW_BUILD_VERBOSITY: 1
+        
+      run: python -m cibuildwheel --output-dir wheelhouse
+
+    - name: Upload wheels
+      uses: actions/upload-artifact@v3
+      with:
+        name: wheels-${{ matrix.os }}
+        path: ./wheelhouse/*.whl
+
+  build_sdist:
+    name: Build source distribution
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install build
+
+    - name: Set dynamic version
+      run: |
+        echo "DYNAMIC_VERSION=0.1.0.dev$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+      shell: bash
+
+    - name: Build sdist
+      env:
+        CGAL_ALPHA_WRAPPING_VERSION: ${{ env.DYNAMIC_VERSION }}
+      run: python -m build --sdist
+
+    - name: Upload sdist
+      uses: actions/upload-artifact@v3
+      with:
+        name: sdist
+        path: dist/*.tar.gz
+
+  upload_test_pypi:
+    name: Upload to Test PyPI
+    needs: [build_wheels, build_sdist]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    environment:
+      name: testpypi
+      url: https://test.pypi.org/p/cgal-alpha-wrapping
+    permissions:
+      id-token: write
+    steps:
+    - name: Download all artifacts
+      uses: actions/download-artifact@v3
+
+    - name: Publish to Test PyPI
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        repository-url: https://test.pypi.org/legacy/
+        packages-dir: ./*/
+
+  upload_pypi:
+    name: Upload to PyPI
+    needs: [build_wheels, build_sdist]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release' && github.event.action == 'published'
+    environment:
+      name: pypi
+      url: https://pypi.org/p/cgal-alpha-wrapping
+    permissions:
+      id-token: write
+    steps:
+    - name: Download all artifacts
+      uses: actions/download-artifact@v3
+
+    - name: Publish to PyPI
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        packages-dir: ./*/
