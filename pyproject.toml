@@ -1,6 +1,7 @@
 [project]
 name = "cgal-alpha-wrapping"
-description = ""
+description = "cgal-alpha-wrapping"
+version = "1.0.0"
 authors = [
     {name = "sth-v",email = "sthv.developer@gmail.com"}
 ]
@@ -19,7 +20,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "cgal-alpha-wrapping"
-version = "1.0.0"
+
 description = ""
 authors = ["sth-v <sthv.developer@gmail.com>"]
 
