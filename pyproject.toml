@@ -1,6 +1,6 @@
 [project]
 name = "cgal-alpha-wrapping"
-description = "cgal-alpha-wrapping"
+description = ""
 authors = [
     {name = "sth-v",email = "sthv.developer@gmail.com"}
 ]
@@ -10,24 +10,18 @@ dependencies = [
     "numpy>=2.0.2"
 
 ]
-license = "GNU GENERAL PUBLIC LICENSE Version 3"
-dynamic = ["version"]
 
 
-[tool.poetry]
-version = "0.0.0"  # placeholder, will be overridden
-[tool.poetry.requires-plugins]
-poetry-dynamic-versioning = { version = ">=1.0.0,<2.0.0", extras = ["plugin"] }
 
 [build-system]
 requires = ["poetry-core>=2.0.0", "poetry-dynamic-versioning>=1.0.0,<2.0.0", "cython>=3.1", "numpy", "setuptools", "pyMSVC;sys_platform=='win32'"]
-build-backend = "poetry_dynamic_versioning.backend"
+build-backend = "poetry.core.masonry.api"
 
-
-[tool.poetry-dynamic-versioning]
-enable = true
-vcs    = "git"
-
+[tool.poetry]
+name = "cgal-alpha-wrapping"
+version = "1.0.0"
+description = ""
+authors = ["sth-v <sthv.developer@gmail.com>"]
 
 
 [tool.poetry.build]
