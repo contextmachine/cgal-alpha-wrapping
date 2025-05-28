@@ -5,13 +5,7 @@ import platform
 import os
 import sys
 import setuptools
-import numpy
 
-# rest of setup code here
-from setuptools import Extension, Distribution
-from setuptools.command.build_ext import build_ext
-
-from Cython.Build import cythonize
 # Detect platform
 system = platform.system()
 machine = platform.machine()
@@ -24,7 +18,6 @@ extra_compile_args = ['-O3']
 extra_link_args = []
 
 if system == 'Linux':
-    # Ubuntu/Debian typical paths
     include_dirs.extend([
         '/usr/include',
         '/usr/include/eigen3',
@@ -40,12 +33,10 @@ if system == 'Linux':
     extra_link_args.append('-std=c++17')
 
 elif system == 'Darwin':  # macOS
-    if machine == 'arm64':  # Apple Silicon
-        # Homebrew on Apple Silicon uses /opt/homebrew
+    if machine == 'arm64':
         homebrew_prefix = '/opt/homebrew'
-    else:  # Intel Mac
+    else:
         homebrew_prefix = '/usr/local'
-    
     include_dirs.extend([
         f'{homebrew_prefix}/include',
         f'{homebrew_prefix}/include/eigen3',
@@ -56,30 +47,20 @@ elif system == 'Darwin':  # macOS
         f'{homebrew_prefix}/lib',
         '/usr/local/lib'
     ])
-    extra_compile_args.extend(['-std=c++17', '-stdlib=libc++',"-mcpu=apple-m1",'-flto'])
-    extra_link_args.extend(['-std=c++17', '-stdlib=libc++','-flto'])
-    
-    # On macOS, we might need to add rpath for finding libraries at runtime
-    #extra_link_args.extend([
-    #    f'-Wl,-rpath,{homebrew_prefix}/lib',
-    #    '-Wl,-rpath,/usr/local/lib'
-    #])
+    extra_compile_args.extend(['-std=c++17', '-stdlib=libc++', '-mcpu=apple-m1', '-flto'])
+    extra_link_args.extend(['-std=c++17', '-stdlib=libc++', '-flto'])
 
 elif system == 'Windows':
-    # Windows paths - adjust based on your CGAL installation
-    # Common locations for vcpkg or manual installation
     vcpkg_root = os.environ.get('VCPKG_ROOT', 'C:/vcpkg')
     cgal_root = os.environ.get('CGAL_DIR', 'C:/CGAL')
-    
     include_dirs.extend([
         f'{vcpkg_root}/installed/x64-windows/include',
         f'{cgal_root}/include',
         f'{cgal_root}/auxiliary/gmp/include',
-        'C:/boost/include',  # Boost is often required
+        'C:/boost/include',
         'C:/Program Files/CGAL/include',
         'C:/local/include'
     ])
-    
     library_dirs.extend([
         f'{vcpkg_root}/installed/x64-windows/lib',
         f'{cgal_root}/lib',
@@ -88,34 +69,26 @@ elif system == 'Windows':
         'C:/Program Files/CGAL/lib',
         'C:/local/lib'
     ])
-    
-    # Windows uses different library names
-    libraries = ['gmp-10', 'mpfr-4']  # Might need to adjust version numbers
-    
-    # MSVC compiler flags
+    # Use the unversioned library names provided by vcpkg
+    libraries = ['gmp', 'mpfr']
     extra_compile_args = ['/OX', '/std:c++17', '/EHsc']
     extra_link_args = []
-    
-    # Add Windows-specific defines
     extra_compile_args.extend([
         '/D_USE_MATH_DEFINES',
-        '/DNOMINMAX',  # Prevent Windows.h from defining min/max macros
+        '/DNOMINMAX',
         '/DCGAL_DISABLE_ROUNDING_MATH_CHECK'
     ])
 
-# Allow environment variables to override paths
-if 'CGAL_INCLUDE_DIR' in os.environ:
-    include_dirs.insert(0, os.environ['CGAL_INCLUDE_DIR'])
-if 'CGAL_LIBRARY_DIR' in os.environ:
-    library_dirs.insert(0, os.environ['CGAL_LIBRARY_DIR'])
-if 'EIGEN3_INCLUDE_DIR' in os.environ:
-    include_dirs.insert(0, os.environ['EIGEN3_INCLUDE_DIR'])
+# Allow environment overrides
+for var, lst in [('CGAL_INCLUDE_DIR', include_dirs), ('CGAL_LIBRARY_DIR', library_dirs), ('EIGEN3_INCLUDE_DIR', include_dirs)]:
+    if var in os.environ:
+        lst.insert(0, os.environ[var])
 
 # Filter out non-existent directories
 include_dirs = [d for d in include_dirs if os.path.exists(d)]
 library_dirs = [d for d in library_dirs if os.path.exists(d)]
 
-# Print detected configuration for debugging
+# Debug output
 logo = rf"""
 {platform.uname()}
 compile_args: {extra_compile_args}
@@ -125,7 +98,6 @@ print(f"Platform: {system} {machine}")
 print(f"Include directories: {include_dirs}")
 print(f"Library directories: {library_dirs}")
 print(f"Libraries: {libraries}")
-
 
 extensions = [
     Extension(
@@ -141,8 +113,6 @@ extensions = [
     )
 ]
 
-
-
 compiler_directives = dict(
     boundscheck=False,
     wraparound=False,
@@ -155,7 +125,6 @@ compiler_directives = dict(
 )
 
 def get_version():
-    """Get version from environment variable or default."""
     return os.environ.get('CGAL_ALPHA_WRAPPING_VERSION', '0.1.0')
 
 if __name__ == "__main__":
@@ -165,10 +134,7 @@ if __name__ == "__main__":
         nthreads=os.cpu_count(),
         include_path=[np.get_include()],
         compiler_directives=compiler_directives
-
     )
-    
-    # Set up distribution with dynamic version
     version = get_version()
     dist = Distribution({
         "ext_modules": ext_modules,
@@ -179,8 +145,7 @@ if __name__ == "__main__":
     cmd.ensure_finalized()
     cmd.run()
 
-    import os, shutil
-
+    import shutil
     for output in cmd.get_outputs():
-        relative_extension = os.path.relpath(output, cmd.build_lib)
-        shutil.copyfile(output, relative_extension)
+        rel = os.path.relpath(output, cmd.build_lib)
+        shutil.copyfile(output, rel)
