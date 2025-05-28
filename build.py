@@ -5,7 +5,13 @@ import platform
 import os
 import sys
 import setuptools
+import numpy
 
+# rest of setup code here
+from setuptools import Extension, Distribution
+from setuptools.command.build_ext import build_ext
+
+from Cython.Build import cythonize
 # Detect platform
 system = platform.system()
 machine = platform.machine()
@@ -33,10 +39,12 @@ if system == 'Linux':
     extra_link_args.append('-std=c++17')
 
 elif system == 'Darwin':  # macOS
-    if machine == 'arm64':
+    if machine == 'arm64':  # Apple Silicon
+        # Homebrew on Apple Silicon uses /opt/homebrew
         homebrew_prefix = '/opt/homebrew'
-    else:
+    else:  # Intel Mac
         homebrew_prefix = '/usr/local'
+    
     include_dirs.extend([
         f'{homebrew_prefix}/include',
         f'{homebrew_prefix}/include/eigen3',
@@ -47,8 +55,14 @@ elif system == 'Darwin':  # macOS
         f'{homebrew_prefix}/lib',
         '/usr/local/lib'
     ])
-    extra_compile_args.extend(['-std=c++17', '-stdlib=libc++', '-mcpu=apple-m1', '-flto'])
-    extra_link_args.extend(['-std=c++17', '-stdlib=libc++', '-flto'])
+    extra_compile_args.extend(['-std=c++17', '-stdlib=libc++',"-mcpu=apple-m1",'-flto'])
+    extra_link_args.extend(['-std=c++17', '-stdlib=libc++','-flto'])
+    
+    # On macOS, we might need to add rpath for finding libraries at runtime
+    #extra_link_args.extend([
+    #    f'-Wl,-rpath,{homebrew_prefix}/lib',
+    #    '-Wl,-rpath,/usr/local/lib'
+    #])
 
 elif system == 'Windows':
     vcpkg_root = os.environ.get('VCPKG_ROOT', 'C:/vcpkg')
@@ -79,10 +93,13 @@ elif system == 'Windows':
         '/DCGAL_DISABLE_ROUNDING_MATH_CHECK'
     ])
 
-# Allow environment overrides
-for var, lst in [('CGAL_INCLUDE_DIR', include_dirs), ('CGAL_LIBRARY_DIR', library_dirs), ('EIGEN3_INCLUDE_DIR', include_dirs)]:
-    if var in os.environ:
-        lst.insert(0, os.environ[var])
+# Allow environment variables to override paths
+if 'CGAL_INCLUDE_DIR' in os.environ:
+    include_dirs.insert(0, os.environ['CGAL_INCLUDE_DIR'])
+if 'CGAL_LIBRARY_DIR' in os.environ:
+    library_dirs.insert(0, os.environ['CGAL_LIBRARY_DIR'])
+if 'EIGEN3_INCLUDE_DIR' in os.environ:
+    include_dirs.insert(0, os.environ['EIGEN3_INCLUDE_DIR'])
 
 # Filter out non-existent directories
 include_dirs = [d for d in include_dirs if os.path.exists(d)]
@@ -145,7 +162,8 @@ if __name__ == "__main__":
     cmd.ensure_finalized()
     cmd.run()
 
-    import shutil
+    import os, shutil
+
     for output in cmd.get_outputs():
-        rel = os.path.relpath(output, cmd.build_lib)
-        shutil.copyfile(output, rel)
+        relative_extension = os.path.relpath(output, cmd.build_lib)
+        shutil.copyfile(output, relative_extension)
