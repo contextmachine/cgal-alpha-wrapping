@@ -8,3 +8,4 @@ __pycache__/
 *.so
 
 cgal_alpha_wrapping/_cgal_alpha_wrapping.cpp
+.poetry/
