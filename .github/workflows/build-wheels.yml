@@ -11,12 +11,15 @@ on:
 jobs:
   build_wheels:
     name: Build wheels on ${{ matrix.os }} - Python ${{ matrix.python-version }}
-    runs-on: ${{ matrix.os }}
+
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
         python-version: ['3.9', '3.10', '3.11', '3.12', '3.13']
-
+    defaults:
+      run:
+        shell: bash
+    runs-on: ${{ matrix.os }}
     steps:
 
     - name: Check out repository
