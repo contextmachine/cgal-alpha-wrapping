@@ -156,6 +156,13 @@ if __name__ == "__main__":
     
     import os, shutil
     
+    # Copy built extensions to the package directory
     for output in cmd.get_outputs():
-        relative_extension = os.path.relpath(output, cmd.build_lib)
-        shutil.copyfile(output, relative_extension)
+        # Get the filename of the extension
+        filename = os.path.basename(output)
+        # Determine the target directory (cgal_alpha_wrapping package)
+        target_dir = os.path.join(os.path.dirname(__file__), 'cgal_alpha_wrapping')
+        target_path = os.path.join(target_dir, filename)
+        
+        print(f"Copying {output} -> {target_path}")
+        shutil.copyfile(output, target_path)
