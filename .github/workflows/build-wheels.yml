@@ -48,6 +48,20 @@ jobs:
         brew update
         brew install cgal eigen gmp mpfr
 
+    # Windows: Cache vcpkg packages
+    - name: Cache vcpkg
+      if: runner.os == 'Windows'
+      uses: actions/cache@v4
+      with:
+        path: |
+          C:\vcpkg\installed
+          C:\vcpkg\packages
+          C:\vcpkg\downloads
+          C:\vcpkg\buildtrees
+        key: ${{ runner.os }}-vcpkg-${{ hashFiles('**/build-wheels.yml') }}-cgal-gmp-mpfr-eigen3
+        restore-keys: |
+          ${{ runner.os }}-vcpkg-
+    
     # Windows: Install CGAL and dependencies via vcpkg
     - name: Install CGAL on Windows
       if: runner.os == 'Windows'
@@ -61,7 +75,7 @@ jobs:
           call bootstrap-vcpkg.bat
         )
         vcpkg integrate install
-        REM Install dynamic libraries (faster than static)
+        REM Install dynamic libraries (only if not cached)
         vcpkg install cgal:x64-windows eigen3:x64-windows gmp:x64-windows mpfr:x64-windows
 
     - name: Set up Python
@@ -75,6 +89,18 @@ jobs:
       with:
         virtualenvs-create: true
         virtualenvs-in-project: true
+
+    # Cache Poetry dependencies
+    - name: Cache Poetry dependencies
+      uses: actions/cache@v4
+      with:
+        path: |
+          .venv
+          ~/.cache/pypoetry
+        key: ${{ runner.os }}-poetry-${{ matrix.python-version }}-${{ hashFiles('**/poetry.lock', '**/pyproject.toml') }}
+        restore-keys: |
+          ${{ runner.os }}-poetry-${{ matrix.python-version }}-
+          ${{ runner.os }}-poetry-
 
     - name: Install dependencies
       run: poetry install --no-interaction --no-root
