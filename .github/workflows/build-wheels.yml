@@ -48,7 +48,7 @@ jobs:
         brew update
         brew install cgal eigen gmp mpfr
 
-    # Windows: Install CGAL and dependencies via vcpkg
+    # Windows: Install CGAL and dependencies via vcpkg (static libraries)
     - name: Install CGAL on Windows
       if: runner.os == 'Windows'
       shell: cmd
@@ -61,7 +61,10 @@ jobs:
           call bootstrap-vcpkg.bat
         )
         vcpkg integrate install
-        vcpkg install cgal:x64-windows eigen3:x64-windows gmp:x64-windows mpfr:x64-windows
+        REM Install static libraries
+        vcpkg install cgal:x64-windows-static eigen3:x64-windows-static gmp:x64-windows-static mpfr:x64-windows-static
+        REM Set environment variable for static linking
+        echo VCPKG_DEFAULT_TRIPLET=x64-windows-static >> %GITHUB_ENV%
 
     - name: Set up Python
       id: setup-python
@@ -78,18 +81,12 @@ jobs:
     - name: Install dependencies
       run: poetry install --no-interaction --no-root
 
-    - name: Set dynamic version
-      run: |
-        echo "DYNAMIC_VERSION=0.1.0+dev.$(git rev-parse --short HEAD)" >> $GITHUB_ENV
-      shell: bash
     - name: Debug venv
       run: |
         ls -a
         ls -a .venv
 
     - name: Poetry build wheel
-      env:
-        CGAL_ALPHA_WRAPPING_VERSION: ${{ env.DYNAMIC_VERSION }}
       run: |
         source $VENV
         mkdir -p wheelhouse
@@ -137,14 +134,9 @@ jobs:
 
     - name: Install dependencies
       run: poetry install --no-interaction --no-root
-    - name: Set dynamic version
-      run: |
-        echo "DYNAMIC_VERSION=0.1.0+dev.$(git rev-parse --short HEAD)" >> $GITHUB_ENV
-      shell: bash
 
     - name: Poetry build
-      env:
-        CGAL_ALPHA_WRAPPING_VERSION: ${{ env.DYNAMIC_VERSION }}
+
       run: |
         source $VENV
         poetry build

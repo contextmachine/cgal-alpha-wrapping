@@ -1,7 +1,7 @@
 [project]
 name = "cgal-alpha-wrapping"
 description = "cgal-alpha-wrapping"
-version = "1.0.0"
+version = "1.0.1"
 authors = [
     {name = "sth-v",email = "sthv.developer@gmail.com"}
 ]

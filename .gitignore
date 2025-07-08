@@ -5,7 +5,11 @@ build/
 poetry.lock
 *.DS_Store
 __pycache__/
-*.so
-
-cgal_alpha_wrapping/_cgal_alpha_wrapping.cpp
 .poetry/
+dist/
+wheelhouse/
+*.dll
+cgal_alpha_wrapping/*.dll
+*.pyd
+*.so
+*.dylib
