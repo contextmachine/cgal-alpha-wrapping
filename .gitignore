@@ -8,8 +8,3 @@ __pycache__/
 .poetry/
 dist/
 wheelhouse/
-*.dll
-cgal_alpha_wrapping/*.dll
-*.pyd
-*.so
-*.dylib

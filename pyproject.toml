@@ -20,9 +20,15 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "cgal-alpha-wrapping"
-
+version = "1.0.2"
 description = ""
 authors = ["sth-v <sthv.developer@gmail.com>"]
+packages = [{include = "cgal_alpha_wrapping"}]
+include = [
+    {path = "cgal_alpha_wrapping/*.pyd", format = "wheel"},
+    {path = "cgal_alpha_wrapping/*.so", format = "wheel"},
+    {path = "cgal_alpha_wrapping/*.dll", format = "wheel"}
+]
 
 
 [tool.poetry.build]
