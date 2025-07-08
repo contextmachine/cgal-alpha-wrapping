@@ -48,7 +48,7 @@ jobs:
         brew update
         brew install cgal eigen gmp mpfr
 
-    # Windows: Install CGAL and dependencies via vcpkg (static libraries)
+    # Windows: Install CGAL and dependencies via vcpkg
     - name: Install CGAL on Windows
       if: runner.os == 'Windows'
       shell: cmd
@@ -61,10 +61,8 @@ jobs:
           call bootstrap-vcpkg.bat
         )
         vcpkg integrate install
-        REM Install static libraries
-        vcpkg install cgal:x64-windows-static eigen3:x64-windows-static gmp:x64-windows-static mpfr:x64-windows-static
-        REM Set environment variable for static linking
-        echo VCPKG_DEFAULT_TRIPLET=x64-windows-static >> %GITHUB_ENV%
+        REM Install dynamic libraries (faster than static)
+        vcpkg install cgal:x64-windows eigen3:x64-windows gmp:x64-windows mpfr:x64-windows
 
     - name: Set up Python
       id: setup-python
@@ -91,7 +89,24 @@ jobs:
         source $VENV
         mkdir -p wheelhouse
         poetry build --format wheel
-        cp dist/*.whl wheelhouse/
+    
+    - name: Repair Windows wheel with delvewheel
+      if: runner.os == 'Windows'
+      shell: bash
+      run: |
+        source $VENV
+        pip install delvewheel
+        # Add vcpkg bin directory to PATH for DLL discovery
+        export PATH="/c/vcpkg/installed/x64-windows/bin:$PATH"
+        # Repair wheels to include DLL dependencies
+        for wheel in dist/*.whl; do
+          echo "Repairing wheel: $wheel"
+          delvewheel repair "$wheel" --wheel-dir wheelhouse --add-path "C:/vcpkg/installed/x64-windows/bin"
+        done
+    
+    - name: Copy non-Windows wheels
+      if: runner.os != 'Windows'
+      run: cp dist/*.whl wheelhouse/
 
     - name: Upload wheels
       uses: actions/upload-artifact@v4

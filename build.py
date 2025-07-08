@@ -61,12 +61,7 @@ elif system == 'Windows':
     vcpkg_root = os.environ.get('VCPKG_ROOT', 'C:/vcpkg')
     cgal_root = os.environ.get('CGAL_DIR', 'C:/CGAL')
     
-    # Check if we're using vcpkg with static libraries
-    vcpkg_triplet = os.environ.get('VCPKG_DEFAULT_TRIPLET', 'x64-windows-static')
-    use_static = 'static' in vcpkg_triplet
-    
     include_dirs.extend([
-        f'{vcpkg_root}/installed/{vcpkg_triplet}/include',
         f'{vcpkg_root}/installed/x64-windows/include',
         f'{cgal_root}/include',
         f'{cgal_root}/auxiliary/gmp/include',
@@ -75,7 +70,6 @@ elif system == 'Windows':
         'C:/local/include'
     ])
     library_dirs.extend([
-        f'{vcpkg_root}/installed/{vcpkg_triplet}/lib',
         f'{vcpkg_root}/installed/x64-windows/lib',
         f'{cgal_root}/lib',
         f'{cgal_root}/auxiliary/gmp/lib',
@@ -84,16 +78,10 @@ elif system == 'Windows':
         'C:/local/lib'
     ])
     
-    # For static linking, use static library names
-    if use_static:
-        libraries = ['gmp', 'mpfr']
-        # Add runtime library flags for static linking
-        extra_compile_args = ['/O2', '/std:c++17', '/EHsc', '/MT']
-        extra_link_args = ['/NODEFAULTLIB:MSVCRT']
-    else:
-        libraries = ['gmp', 'mpfr']
-        extra_compile_args = ['/O2', '/std:c++17', '/EHsc', '/MD']
-        extra_link_args = []
+    # Use dynamic libraries
+    libraries = ['gmp', 'mpfr']
+    extra_compile_args = ['/O2', '/std:c++17', '/EHsc', '/MD']
+    extra_link_args = []
     
     extra_compile_args.extend([
         '/D_USE_MATH_DEFINES',
